@@ -1,19 +1,10 @@
 require 'anachronism/version'
+require 'anachronism/anachronism'
 
 module Anachronism
   class Parser
     def out (&blk)
       @out = blk
-    end
-    
-    def process (data)
-      events = process_internal(data)
-      if block_given?
-        events.each do |event|
-          yield event
-        end
-      end
-      events
     end
     
     # Emit a WILL, WONT, DO, or DONT option request.
@@ -32,16 +23,18 @@ module Anachronism
         raise "Invalid command (must be :will, :wont, :do, or :dont)"
       end.chr
       
-      emit "\xFF#{command}#{option}"
+      emit "\xFF#{command}#{option.chr}"
+    end
+    
+    def send_text (text)
+      emit text.gsub("\r", "\r\0").gsub("\r\0\n", "\r\n").gsub("\xFF", "\xFF\xFF")
     end
     
   private
     def emit (data)
+      data = data.force_encoding("ASCII-8BIT")
       @out.call(data) if @out
       data
     end
   end
 end
-
-# Pull in the C extension implementation
-require 'anachronism/anachronism'

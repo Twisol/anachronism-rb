@@ -15,8 +15,11 @@ Gem::Specification.new do |s|
   s.description = 'An Anachronism parser maps Telnet-compliant data to a stream of event objects.'
   s.required_ruby_version = '~> 1.9.0'
   
-  s.files = Dir['ext/anachronism/*'].reject {|f| f =~ /(?:^\/Makefile|\.(?:s?o|rl))$/} \
+  s.files = Dir['ext/anachronism/*'].reject {|f| f =~ /(?:\/Makefile|\.(?:s?o|rl))$/} \
           + Dir['lib/**/*']
   s.require_paths << 'ext'
   s.extensions << 'ext/anachronism/extconf.rb'
+  
+  s.add_development_dependency 'rspec', '~> 2.1.0'
+  s.add_development_dependency 'bundler', '~> 1.0.7'
 end
