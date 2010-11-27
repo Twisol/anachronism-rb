@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    anachronism (0.0.3)
+    anachronism (0.0.4)
 
 GEM
   specs:
@@ -20,4 +20,5 @@ PLATFORMS
 
 DEPENDENCIES
   anachronism!
+  bundler (~> 1.0.7)
   rspec (~> 2.1.0)

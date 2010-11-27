@@ -2,32 +2,37 @@ require 'anachronism/version'
 require 'anachronism/anachronism'
 
 module Anachronism
-  class Parser
+  Event = Struct.new(:type, :data)
+  
+  class NVT
     def out (&blk)
       @out = blk
     end
     
     # Emit a WILL, WONT, DO, or DONT option request.
     def send_option (command, option)
-      option = option.to_i
-      unless (0..255).include?(option)
+      option = option[0]
+      unless (0..255).include?(option.ord)
         raise "Option code must be within (0..255)"
       end
       
       command = case command
-        when :will then 250
-        when :wont then 251
-        when :do   then 252
-        when :dont then 253
+        when :will then 251
+        when :wont then 252
+        when :do   then 253
+        when :dont then 254
       else
         raise "Invalid command (must be :will, :wont, :do, or :dont)"
       end.chr
       
-      emit "\xFF#{command}#{option.chr}"
+      emit "\xFF#{command}#{option}"
     end
     
     def send_text (text)
-      emit text.gsub("\r", "\r\0").gsub("\r\0\n", "\r\n").gsub("\xFF", "\xFF\xFF")
+      text = text.gsub("\r", "\r\0")
+      text.gsub!("\r\0\n", "\r\n")
+      text.gsub!("\xFF", "\xFF\xFF")
+      emit text
     end
     
   private
