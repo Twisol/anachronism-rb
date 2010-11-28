@@ -61,8 +61,15 @@ describe Anachronism::NVT do
   
   it "sends an option command" do
     @nvt.out do |data|
-      fail data.bytes.to_a.to_s unless data == "\xFF\xFE\xFF"
+      fail data unless data == "\xFF\xFE\xFF"
     end
     @nvt.dont_option 255
+  end
+  
+  it "sends text" do
+    @nvt.out do |data|
+      fail data unless data == "foo\xFF\xFFbar\r\0baz\r\n"
+    end
+    @nvt.send_text "foo\xFFbar\rbaz\n"
   end
 end

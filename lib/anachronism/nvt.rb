@@ -24,16 +24,6 @@ module Anachronism
       send_option(254, option)
     end
     
-    def send_text (text)
-      emit text.gsub /\r|\n|\xFF/ do |match|
-        case match
-          when "\r"   then "\r\0"
-          when "\n"   then "\r\n"
-          when "\xFF" then "\xFF\xFF"
-        end
-      end
-    end
-    
   private
     def send_option (command, option)
       unless (0..255).include?(option.ord)
