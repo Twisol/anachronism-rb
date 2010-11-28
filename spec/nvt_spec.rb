@@ -63,6 +63,6 @@ describe Anachronism::NVT do
     @nvt.out do |data|
       fail data.bytes.to_a.to_s unless data == "\xFF\xFE\xFF"
     end
-    @nvt.send_option :dont, "\xFF"
+    @nvt.dont_option 255
   end
 end
