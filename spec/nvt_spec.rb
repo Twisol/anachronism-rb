@@ -39,7 +39,7 @@ describe Anachronism::NVT do
   
   it "emits a subnegotiation event" do
     collect_events "\xFF\xFA\xFFfoobar\xFF\xF0" do |events|
-      fail events.to_s unless events == [:subnegotiation]
+      fail events.to_s unless events == [:subnegotiation, :text, :subnegotiation]
     end
   end
   
