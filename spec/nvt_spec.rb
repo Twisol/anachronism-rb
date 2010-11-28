@@ -4,7 +4,7 @@ require 'anachronism'
 describe Anachronism::NVT do
   def collect_events (data)
     arr = []
-    @nvt.process(data) {|type,| arr << type}
+    @nvt.process(data) {|type, data| arr << type}
     yield arr if block_given?
     arr
   end
@@ -49,6 +49,12 @@ describe Anachronism::NVT do
     end
     collect_events "\xFF" do |events|
       fail events.to_s unless events == [:text]
+    end
+  end
+  
+  it "splits text events around errors" do
+    collect_events "a\rb" do |events|
+      fail events.to_s unless events == [:text, :error, :text]
     end
   end
   
