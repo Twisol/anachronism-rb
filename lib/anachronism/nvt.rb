@@ -23,7 +23,7 @@ module Anachronism
     def dont_option (option)
       send_option(254, option)
     end
-    
+  
   private
     def send_option (command, option)
       unless (0..255).include?(option.ord)

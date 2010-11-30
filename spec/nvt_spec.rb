@@ -78,4 +78,12 @@ describe Anachronism::NVT do
     end
     @nvt.dont_option 255
   end
+  
+  it "can halt in the middle of processing" do
+    data = @nvt.process("\xFF\xF2foo") do |type, data|
+      fail type.to_s unless type == :command
+      @nvt.halt
+    end
+    fail data.to_s unless data == "foo"
+  end
 end
