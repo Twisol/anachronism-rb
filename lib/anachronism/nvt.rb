@@ -1,6 +1,4 @@
 module Anachronism
-  Event = Struct.new(:type, :data)
-  
   class NVT
     class Callbacks
       attr_reader :nvt
