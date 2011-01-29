@@ -1,4 +1,4 @@
 #!/usr/bin/env ruby
 require 'mkmf'
 
-create_makefile('anachronism')
+create_makefile('libanachronism')
