@@ -1,3 +1,5 @@
+# Anachronism
+
 Anachonism implements a simple interface to the (libanachronism)[1] Telnet library,
 allowing Ruby programs to utilize the Telnet protocol effectively. I wrote it
 for use in my MUD client project, but it is generic enough for most
