@@ -1,19 +1,14 @@
 PATH
   remote: .
   specs:
-    anachronism (0.0.5)
+    anachronism (0.1.0)
+      ffi (~> 1.0.7)
 
 GEM
   specs:
-    diff-lcs (1.1.2)
-    rspec (2.1.0)
-      rspec-core (~> 2.1.0)
-      rspec-expectations (~> 2.1.0)
-      rspec-mocks (~> 2.1.0)
-    rspec-core (2.1.0)
-    rspec-expectations (2.1.0)
-      diff-lcs (~> 1.1.2)
-    rspec-mocks (2.1.0)
+    ffi (1.0.7)
+      rake (>= 0.8.7)
+    rake (0.8.7)
 
 PLATFORMS
   ruby
@@ -21,4 +16,3 @@ PLATFORMS
 DEPENDENCIES
   anachronism!
   bundler (~> 1.0.7)
-  rspec (~> 2.1.0)

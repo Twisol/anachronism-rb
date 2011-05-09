@@ -1,4 +1,8 @@
+require "ffi"
+
 module Anachronism
   require 'anachronism/version'
-  require 'anachronism/libanachronism'
+  
+  require 'anachronism/native'
+  require 'anachronism/nvt'
 end

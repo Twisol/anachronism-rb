@@ -9,17 +9,15 @@ Gem::Specification.new do |s|
   s.version = Anachronism::VERSION
   s.license = 'MIT'
   s.author = 'Jonathan Castello'
+  s.homepage = 'https://github.com/Twisol/anachronism'
   s.email = 'jonathan@jonathan.com'
   
-  s.summary = 'Parses Telnet data into a stream of events'
-  s.description = 'An Anachronism parser maps Telnet-compliant data to a stream of event objects.'
+  s.summary = 'A binding to libanachronism, a Telnet processing library.'
+  s.description = 'Anachronism provides a simple Ruby interface to the Telnet protocol.'
   s.required_ruby_version = '~> 1.9.0'
   
-  s.files = Dir['ext/anachronism/*'].reject {|f| f =~ /(?:\/Makefile|\.(?:s?o|rl))$/} \
-          + Dir['lib/**/*']
-  s.require_paths << 'ext'
-  s.extensions << 'ext/anachronism/extconf.rb'
+  s.files = Dir['lib/**/*']
   
-  s.add_development_dependency 'rspec', '~> 2.1.0'
+  s.add_dependency 'ffi', '~> 1.0.7'
   s.add_development_dependency 'bundler', '~> 1.0.7'
 end
