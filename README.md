@@ -3,7 +3,7 @@ allowing Ruby programs to utilize the Telnet protocol effectively. I wrote it
 for use in my MUD client project, but it is generic enough for most
 Telnet-based applications.
 
-== Example ==
+## Example
 
     require "anachronism"
     
