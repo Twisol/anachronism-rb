@@ -1,56 +1,65 @@
+require "ffi"
+
 module Anachronism::Native
   extend FFI::Library
   ffi_lib 'anachronism'
   
+  typedef :pointer, :parser
   typedef :pointer, :nvt
-  typedef :pointer, :callbacks
+  typedef :pointer, :channel
   
-  enum :telnet_error, [
-    :bad_nvt,       -3,
-    :bad_command,
+  enum :error, [
+    :registered, -8,
+    :not_open,
+    :bad_channel,
+    :bad_parser,
+    :bad_nvt,
+    :invalid_option,
+    :invalid_command,
     :subnegotiating,
-    :allocation,
+    :alloc,
     :ok,
+    :interrupt,
   ]
   
-  enum :telnet_event_type, [
+  enum :event_type, [
     :data,
     :command,
     :option,
     :subnegotiation,
     :warning,
+    :send,
   ]
   
-  enum :telnet_command, [
-    :NOP, 241,
-    :DM,
-    :BRK,
-    :IP,
-    :AO,
-    :AYT,
-    :EC,
-    :EL,
-    :GA,
-    :SB,
+  enum :channel_provider, [
+    :local,
+    :remote,
   ]
   
-  enum :telnet_option_mode, [
-    :WILL, 251,
-    :WONT,
-    :DO,
-    :DONT,
+  enum :channel_mode, [
+    :off,
+    :on,
+    :lazy,
   ]
   
-  callback :recv_callback, [:nvt, :pointer], :void
-  callback :send_callback, [:nvt, :pointer, :size_t], :void
+  enum :channel_event_type, [
+    :begin,
+    :end,
+    :data,
+  ]
+  
+  callback :parser_callback, [:parser, :pointer], :void
+  callback :event_callback, [:nvt, :pointer], :void
+  callback :channel_toggle_callback, [:channel, :channel_mode, :channel_provider], :void
+  callback :channel_data_callback, [:channel, :channel_event_type, :pointer, :size_t], :void
   
   class Event < FFI::Struct
     layout(
-      :type, :telnet_event_type
+      :type, :event_type
     )
   end
   
-  class TextEvent < FFI::Struct
+  class DataEvent < FFI::Struct
     layout(
       :SUPER_, Event,
       :data, :pointer,
@@ -89,29 +98,80 @@ module Anachronism::Native
     )
   end
   
-  
-  class Callbacks < FFI::Struct
+  class SendEvent < FFI::Struct
     layout(
-      :on_recv, :recv_callback,
-      :on_send, :send_callback
+      :SUPER_, Event,
+      :data, :pointer,
+      :length, :size_t
     )
   end
   
-  attach_function :new_nvt, :telnet_new_nvt, [], :nvt
-  attach_function :free_nvt, :telnet_free_nvt, [:nvt], :void
+  class InterruptCode < FFI::Struct
+    layout(
+      :source, :short,
+      :code, :char
+    )
+  end
   
-  attach_function :get_callbacks, :telnet_get_callbacks, [:nvt, :callbacks], :telnet_error
+  # Parser
+  attach_function :new_parser, :telnet_parser_new, [:parser_callback, :pointer], :parser
+  attach_function :free_parser, :telnet_parser_free, [:parser], :void
   
-  attach_function :get_userdata, :telnet_get_userdata, [:nvt, :pointer], :telnet_error
-  attach_function :set_userdata, :telnet_set_userdata, [:nvt, :pointer], :telnet_error
+  attach_function :parser_get_userdata, :telnet_parser_get_userdata, [:parser, :pointer], :error
   
-  attach_function :halt, :telnet_halt, [:nvt], :telnet_error
-  attach_function :recv, :telnet_recv, [:nvt, :buffer_in, :size_t, :pointer], :telnet_error
+  attach_function :parser_parse, :telnet_parser_parse, [:parser, :buffer_in, :size_t, :pointer], :error
+  attach_function :parser_interrupt, :telnet_parser_interrupt, [:parser], :error
   
-  attach_function :send_data, :telnet_send_data, [:nvt, :buffer_in, :size_t], :telnet_error
-  attach_function :send_command, :telnet_send_command, [:nvt, :telnet_command], :telnet_error
-  attach_function :send_option, :telnet_send_option, [:nvt, :telnet_option_mode, :uchar], :telnet_error
-  attach_function :send_subnegotiation_start, :telnet_send_subnegotiation_start, [:nvt, :uchar], :telnet_error
-  attach_function :send_subnegotiation_end, :telnet_send_subnegotiation_end, [:nvt], :telnet_error
-  attach_function :send_subnegotiation, :telnet_send_subnegotiation, [:nvt, :uchar, :buffer_in, :size_t], :telnet_error
+  # NVT
+  attach_function :new_nvt, :telnet_nvt_new, [:event_callback, :pointer], :nvt
+  attach_function :free_nvt, :telnet_nvt_free, [:nvt], :void
+  
+  attach_function :get_userdata, :telnet_get_userdata, [:nvt, :pointer], :error
+  
+  attach_function :recv, :telnet_recv, [:nvt, :buffer_in, :size_t, :pointer], :error
+  attach_function :interrupt, :telnet_interrupt, [:nvt, InterruptCode], :error
+  attach_function :get_last_interrupt, :telnet_get_last_interrupt, [:nvt, :pointer], :error
+  
+  attach_function :send_data, :telnet_send_data, [:nvt, :buffer_in, :size_t], :error
+  attach_function :send_command, :telnet_send_command, [:nvt, :uchar], :error
+  attach_function :send_option, :telnet_send_option, [:nvt, :uchar, :uchar], :error
+  attach_function :send_subnegotiation_start, :telnet_send_subnegotiation_start, [:nvt, :uchar], :error
+  attach_function :send_subnegotiation_end, :telnet_send_subnegotiation_end, [:nvt], :error
+  attach_function :send_subnegotiation, :telnet_send_subnegotiation, [:nvt, :uchar, :buffer_in, :size_t], :error
+  
+  # Channel
+  attach_function :new_channel, :telnet_channel_new, [:channel_toggle_callback, :channel_data_callback, :pointer], :channel
+  attach_function :free_channel, :telnet_channel_free, [:channel], :void
+  
+  attach_function :register_channel, :telnet_channel_register, [:channel, :nvt, :short, :channel_mode, :channel_mode], :error
+  attach_function :unregister_channel, :telnet_channel_unregister, [:channel], :error
+  
+  attach_function :channel_get_userdata, :telnet_channel_get_userdata, [:channel, :pointer], :error
+  attach_function :channel_get_nvt, :telnet_channel_get_nvt, [:channel, :pointer], :error
+  attach_function :channel_get_option, :telnet_channel_get_option, [:channel, :pointer], :error
+  attach_function :channel_get_status, :telnet_channel_get_status, [:channel, :channel_provider, :pointer], :error
+  
+  attach_function :channel_send, :telnet_channel_send, [:channel, :pointer, :size_t], :error
+  
+  # IAC symbol translation
+  SYM2CMD = {}
+  CMD2SYM = {}
+  
+  [
+   :SE,   :NOP, :DM,   :BRK,
+   :IP,   :AO,  :AYT,  :EC,
+   :EL,   :GA,  :SB,   :WILL,
+   :WONT, :DO,  :DONT, :IAC,
+  ].each_with_index do |sym, i|
+    CMD2SYM[240+i] = sym
+    SYM2CMD[sym] = 240+i
+  end
+  
+  def self.command_to_sym (num)
+    CMD2SYM[num]
+  end
+  
+  def self.sym_to_command (sym)
+    SYM2CMD[sym]
+  end
 end

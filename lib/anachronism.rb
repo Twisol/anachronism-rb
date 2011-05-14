@@ -5,4 +5,5 @@ module Anachronism
   
   require 'anachronism/native'
   require 'anachronism/nvt'
+  require 'anachronism/channel'
 end
