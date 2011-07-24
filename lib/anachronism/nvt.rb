@@ -8,12 +8,14 @@ class Anachronism::Telnet
       @_on_nvt_event,
       @_on_telopt_event,
       FFI::Pointer.new(0))
+    raise NoMemoryError if @telnet_nvt == FFI::Pointer.new(0)
     @telopt_callbacks = Array.new(256)
   end
   
   def receive (data)
     ptr = FFI::MemoryPointer.new :pointer
-    Anachronism::Native.receive(@telnet_nvt, data, data.length, ptr)
+    err = Anachronism::Native.receive(@telnet_nvt, data, data.length, ptr)
+    raise NoMemoryError if err == :alloc
     data[ptr.read_int..-1]
   end
   
@@ -21,36 +23,44 @@ class Anachronism::Telnet
   # the data can be preprocessed before continuing.
   def interrupt_parser
     Anachronism::Native.interrupt(@telnet_nvt)
+    nil
   end
   
   
   def send_text (data)
-    Anachronism::Native.send_data(@telnet_nvt, data, data.length)
+    err = Anachronism::Native.send_data(@telnet_nvt, data, data.length)
+    raise NoMemoryError if err == :alloc
   end
   
   def send_command (command)
-    Anachronism::Native.send_command(@telnet_nvt, command)
+    err = Anachronism::Native.send_command(@telnet_nvt, command)
+    raise ArgumentError, "#{command} is not a valid single-byte command" if err == :invalid_command
   end
   
   def send_subnegotiation (telopt, data)
-    Anachronism::Native.send_subnegotiation(@telnet_nvt, telopt, data, data.length)
+    err = Anachronism::Native.send_subnegotiation(@telnet_nvt, telopt, data, data.length)
+    raise NoMemoryError if err == :alloc
   end
   
   
   def request_local_enable (telopt, opts={})
     Anachronism::Native.telopt_enable_local(@telnet_nvt, telopt, (opts[:lazy]) ? 1 : 0)
+    nil
   end
   
   def request_local_disable (telopt)
     Anachronism::Native.telopt_disable_local(@telnet_nvt, telopt)
+    nil
   end
   
   def request_remote_enable (telopt, opts={})
     Anachronism::Native.telopt_enable_remote(@telnet_nvt, telopt, (opts[:lazy]) ? 1 : 0)
+    nil
   end
   
   def request_remote_disable (telopt)
     Anachronism::Native.telopt_disable_remote(@telnet_nvt, telopt)
+    nil
   end
   
   
