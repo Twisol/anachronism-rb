@@ -1,118 +1,59 @@
 class Anachronism::Channel
-  attr_reader :nvt
+  attr_reader :telnet, :telopt
   
-  NOGC = {} # :nodoc:
-  
-  def self.finalize (channel)
-    Proc.new do
-      Anachronism::Native.free_channel(channel)
-    end
-  end
-  
-  def initialize
-    @_nogc = []
+  def initialize (telopt, telnet)
+    telnet.bind(telopt, self)
     
-    @_nogc << on_toggle = proc {|channel, *a| process_toggle(*a)}
-    @_nogc << on_data = proc {|channel, *a| process_data(*a)}
-    
-    @channel = Anachronism::Native.new_channel(on_toggle, on_data, FFI::Pointer.new(0))
-    
-    ObjectSpace.define_finalizer(self, self.class.finalize(@channel))
-  end
-  
-  def register (nvt, option, modes={})
-    NOGC[@channel] = self
-    nvt.register_channel(@channel, option, modes)
-    @nvt = nvt
-    nil
-  end
-  
-  def unregister
-    NOGC.delete(@channel)
-    @nvt.unregister_channel(@channel)
-    @nvt = nil
-    nil
+    @telnet = telnet
+    @telopt = telopt
   end
   
   def send (data)
-    status = Anachronism::Native.channel_send(@channel, data, data.length)
-    if status == :not_open
-      raise Anachronism::ChannelClosedError, "The channel is not open."
-    elsif status == :subnegotiating
-      raise Anachronism::SubnegotiationError, "A subnegotiation is in progress."
-    elsif status == :alloc
-      raise Anachronism::AllocationError, "Unable to allocate buffer for outgoing data."
-    end
-    nil
-  end
-  
-  def enable (where, lazy)
-    status = Anachronism::Native.channel_toggle(@channel, where, lazy ? :lazy : :on)
-    if status == :registered
-      raise Anachronism::RegisteredError, "The channel is not registered with an NVT."
-    end
-    nil
-  end
-  
-  def disable (where)
-    status = Anachronism::Native.channel_toggle(@channel, where, :off)
-    if status == :registered
-      raise Anachronism::RegisteredError, "The channel is not registered with an NVT."
-    end
-    nil
-  end
-  
-  def option
-    ptr = FFI::MemoryPointer.new :short
-    status = Anachronism::Native.channel_get_option(@channel, ptr)
-    return nil if status == :registered
-    
-    opt = ptr.read_short
-    if opt == -1
-      :main
-    else
-      opt
-    end
-  end
-  
-  def enabled? (where)
-    ptr = FFI::MemoryPointer.new :int
-    status = Anachronism::Native.channel_get_status(@channel, where, ptr)
-    !!ptr.read_int
-  end
-  
-protected
-  def process_toggle (on, who)
-    if on
-      on_open(who)
-    else
-      on_close(who)
-    end
-  end
-  
-  def process_data (type, data, length)
-    if type == :begin
-      on_focus
-    elsif type == :end
-      on_blur
-    elsif type == :data
-      on_data(data.read_string(length))
-    end
+    @telnet.send_subnegotiation(@telopt, data)
   end
   
   
-  def on_open (who)
+  def request_remote_enable (opts={})
+    @telnet.request_remote_enable(@telopt, opts)
   end
   
-  def on_close (who)
+  def request_remote_disable
+    @telnet.request_remote_disable(@telopt)
   end
   
+  def request_local_enable (opts={})
+    @telnet.request_local_enable(@telopt, opts)
+  end
+  
+  def request_local_disable
+    @telnet.request_local_disable(@telopt)
+  end
+  
+  
+  def local_enabled?
+    @telnet.local_enabled?(@telopt)
+  end
+  
+  def remote_enabled?
+    @telnet.remote_enabled?(@telopt)
+  end
+  
+  
+  #
+  # Callbacks
+  ##
   def on_focus
   end
   
   def on_blur
   end
   
-  def on_data (data)
+  def on_text (text)
+  end
+  
+  def on_local_toggle (active)
+  end
+  
+  def on_remote_toggle (active)
   end
 end
